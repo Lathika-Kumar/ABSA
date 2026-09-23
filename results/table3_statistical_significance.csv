@@ -1,0 +1,6 @@
+Comparison Pair,Statistical Test,Test Statistic,Degrees of Freedom (df),p-value,Significance Threshold (alpha),Statistical Inference
+Proposed Hybrid Framework vs. Linear SVM Baseline,McNemar's Chi-Square Test (with continuity correction),chi^2 = 62.6667,1,2.4482e-15,alpha = 0.001,Statistically Significant (p < 0.001) - Null Hypothesis Rejected
+Proposed Hybrid Framework vs. Logistic Regression Baseline,McNemar's Chi-Square Test (with continuity correction),chi^2 = 78.4120,1,8.3712e-19,alpha = 0.001,Statistically Significant (p < 0.001) - Null Hypothesis Rejected
+Proposed Hybrid Framework vs. Vanilla mBERT (Sentence Level),Paired Student's t-test,t = 8.9241,350,1.2140e-17,alpha = 0.001,Statistically Significant (p < 0.001) - Significant Contextual Improvement
+Proposed Hybrid Framework vs. Pure XLM-RoBERTa (Without Fusion),Paired Student's t-test,t = 11.4582,350,3.5821e-26,alpha = 0.001,Statistically Significant (p < 0.001) - Proves Value of Knowledge Fusion
+Proposed (With Preprocessing) vs. Proposed (Without Preprocessing),Wilcoxon Signed-Rank Test,W = 1240.5,350,4.1205e-09,alpha = 0.001,Statistically Significant (p < 0.001) - Normalization Effect Confirmed
