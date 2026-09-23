@@ -35,6 +35,8 @@ Benchmarked on **7,435 aspect-annotated instances** derived from the DravidianCo
 > **💡 Summary & Purpose of Table 1:**
 > Table 1 provides the master benchmark comparing our Proposed Framework against traditional machine learning baselines (Logistic Regression and Linear SVM) and state-of-the-art multilingual transformers (mBERT and XLM-RoBERTa). It empirically proves that classical bag-of-words methods hit a performance ceiling at ~69.64% F1-score due to vocabulary dispersion in code-mixed Tanglish. While standard multilingual transformers improve performance to ~72.57%–76.16%, our Knowledge-Enhanced Cross-Attention Framework elevates the performance to **96.50% Precision and 96.44% F1-score**, answering the core research question of how to achieve near-human precision on code-mixed sentiment analysis.
 
+![Figure 1: Model Comparison](results/figure1_model_comparison.png)
+
 ---
 
 ### 2. Ablation Study (Table 2)
@@ -53,6 +55,8 @@ Benchmarked on **7,435 aspect-annotated instances** derived from the DravidianCo
 > 3. **Removing Postpositional Negation Handling** leads to a **-14.94% F1 drop**, proving that Tamil negation rules (*"nalla illa"*) are critical.
 > 4. **Removing Preprocessing** incurs a **-7.84% F1 drop**, confirming that character elongation reduction (*"semmaaaa"* $\rightarrow$ *"semma"*) is vital to combat Out-Of-Vocabulary fragmentation.
 
+![Figure 2: Ablation Study](results/figure2_ablation_study.png)
+
 ---
 
 ### 3. Statistical Significance Analysis (Table 3)
@@ -68,6 +72,8 @@ To ensure empirical validity, we conducted formal hypothesis testing against tra
 
 > **💡 Summary & Purpose of Table 3:**
 > Table 3 provides mathematical validation proving that our model's superiority is genuine and not an artifact of random test-set sampling. Using McNemar's chi-square test ($\chi^2 = 62.67, p = 2.45 \times 10^{-15}$) and paired Student's $t$-tests ($p < 0.001$), we reject the null hypothesis with overwhelming confidence, providing the formal statistical rigor required by peer-reviewed academic venues.
+
+![Figure 3: Confusion Matrix (96.5% Precision)](results/figure3_confusion_matrix.png)
 
 ---
 
@@ -100,6 +106,8 @@ Evaluated across synthetic character corruptions (character drops, letter swaps,
 > **💡 Summary & Purpose of Table 5:**
 > Table 5 evaluates how gracefully the system tolerates noisy real-world text containing typos, character omissions, and orthographic corruptions. While the unaugmented Vanilla Transformer collapses from 72.34% down to **52.40% F1** (-19.94% degradation) under severe noise, our Proposed Framework with linguistic preprocessing preserves **75.78% F1**, demonstrating a **+23.38% resilience advantage** under noisy social media conditions.
 
+![Figure 4: Robustness Analysis](results/figure4_robustness_analysis.png)
+
 ---
 
 ### 6. Impact of Code-Mixing Index (CMI) on Classification Accuracy (Table 6)
@@ -113,6 +121,8 @@ Quantifying the effect of intra-sentential language switching density $\text{CMI
 
 > **💡 Summary & Purpose of Table 6:**
 > Table 6 investigates the degradation dynamics as the density of language alternation increases. In code-mixed NLP, high CMI ($>30\%$) represents sentences where Tamil and English alternate rapidly within individual phrases (e.g., *"first half semma speed second half romba lag and waste"*). While traditional Linear SVM collapses catastrophically from 78.40% down to **56.50%** (-21.90% drop), our Proposed Framework maintains an exceptional **94.10% accuracy** (**+37.60% resilience margin**), empirically verifying that aspect-conditioned cross-attention successfully insulates the representation from code-switching syntax breakdown.
+
+![Figure 5: Code-Mixing Index (CMI) Analysis](results/figure5_cmi_analysis.png)
 
 ---
 
@@ -129,6 +139,8 @@ A qualitative taxonomy examining the root linguistic phenomena behind the remain
 
 > **💡 Summary & Purpose of Table 7 (Error Analysis & Limitations):**
 > Table 7 provides a rigorous qualitative breakdown of model limitations, directly addressing reviewer expectations for transparent error diagnostics. It reveals that over **41.7% of remaining errors stem from pragmatic sarcasm** (where literal praise conceals ridicule), **25.0% from implicit aspects** (where opinions are expressed metaphorically without naming the entity), and **16.7% from ambiguous demonstrative pronouns**. This provides concrete recommendations for future work (e.g., incorporating commonsense knowledge graphs and conversational discourse parsers).
+
+![Figure 6: Error Distribution](results/figure6_error_distribution.png)
 
 ---
 
