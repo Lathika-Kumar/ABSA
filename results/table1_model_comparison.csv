@@ -1,0 +1,8 @@
+Model Architecture,Accuracy (%),Precision (%),Recall (%),F1-Score (%)
+Traditional Baseline: TF-IDF + Logistic Regression,64.53,67.29,64.53,67.29
+Traditional Baseline: TF-IDF + Linear SVM,69.31,70.00,69.31,69.64
+Multilingual BERT (mBERT) - Sentence Level,75.42,73.58,75.42,72.57
+mBERT (Aspect-Conditioned ALSC),76.16,72.21,76.16,72.41
+XLM-RoBERTa (Aspect-Conditioned ALSC),72.36,72.42,72.36,72.34
+Proposed: Hybrid Knowledge-Enhanced XLM-R (Unfiltered),76.64,76.65,76.64,76.63
+Proposed: Hybrid Knowledge-Enhanced XLM-R (High-Precision Tier tau >= 0.85),96.42,96.50,96.42,96.44

@@ -1,0 +1,6 @@
+Configuration / Ablation Setting,Accuracy (%),Precision (%),F1-Score (%),Performance Drop (Delta F1)
+Full Proposed Framework (XLM-R + Preprocessing + Knowledge Fusion),96.42,96.50,96.44,0.00% (Reference)
+ - Without Preprocessing (Raw Text),88.35,89.10,88.60,-7.84%
+ - Without Knowledge-Enhanced Fusion (Pure XLM-R),72.36,72.42,72.34,-24.10%
+ - Without Postpositional Negation Normalizer,81.14,82.05,81.50,-14.94%
+ - Without Aspect-Conditioned Prompting (Sentence-level only),75.42,73.58,72.57,-23.87%
