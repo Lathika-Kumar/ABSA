@@ -31,27 +31,51 @@ def tanglish_preprocessor(text: str) -> str:
 
 # Comprehensive Movie Aspect Taxonomy (English + Romanized Tamil terms)
 ASPECT_TAXONOMY = {
+    # Story & Screenplay
     "story": "Story/Screenplay", "kadhai": "Story/Screenplay", "plot": "Story/Screenplay", 
     "screenplay": "Story/Screenplay", "script": "Story/Screenplay", "twist": "Story/Screenplay",
+    
+    # Acting & Performance
     "acting": "Acting/Performance", "nadipu": "Acting/Performance", "performance": "Acting/Performance", 
-    "cast": "Acting/Performance", "hero": "Acting/Performance", "heroine": "Acting/Performance", "villain": "Acting/Performance",
+    "cast": "Acting/Performance", "hero": "Acting/Performance", "heroine": "Acting/Performance", 
+    "villain": "Acting/Performance", "role": "Acting/Performance",
+    
+    # Music & Audio
     "music": "Music/Songs/BGM", "isai": "Music/Songs/BGM", "bgm": "Music/Songs/BGM", 
-    "songs": "Music/Songs/BGM", "paatu": "Music/Songs/BGM", "score": "Music/Songs/BGM",
+    "songs": "Music/Songs/BGM", "paatu": "Music/Songs/BGM", "score": "Music/Songs/BGM", "theme": "Music/Songs/BGM",
+    
+    # Direction
     "direction": "Direction", "director": "Direction", "iyakkunar": "Direction", "making": "Direction",
+    
+    # Comedy
     "comedy": "Comedy/Humour", "sirippu": "Comedy/Humour", "jokes": "Comedy/Humour", "humour": "Comedy/Humour", "fun": "Comedy/Humour",
-    "camera": "Cinematography/Visuals", "cinematography": "Cinematography/Visuals", "visuals": "Cinematography/Visuals", "frames": "Cinematography/Visuals", "vfx": "Cinematography/Visuals",
-    "climax": "Climax/Pacing", "interval": "Climax/Pacing", "first half": "Climax/Pacing", "second half": "Climax/Pacing", "lag": "Climax/Pacing",
+    
+    # Visuals & Camera
+    "camera": "Cinematography/Visuals", "cinematography": "Cinematography/Visuals", "visuals": "Cinematography/Visuals", 
+    "frames": "Cinematography/Visuals", "vfx": "Cinematography/Visuals",
+    
+    # Climax & Pacing
+    "climax": "Climax/Pacing", "interval": "Climax/Pacing", "first half": "Climax/Pacing", 
+    "second half": "Climax/Pacing", "lag": "Climax/Pacing", "pacing": "Climax/Pacing",
+    
+    # Editing
     "editing": "Editing", "cuts": "Editing", "trimming": "Editing",
+    
+    # Overall Movie
     "movie": "Overall Movie", "padam": "Overall Movie", "film": "Overall Movie", "cinema": "Overall Movie"
 }
 
-# Strong polarity indicator cues in code-mixed social media
-POS_CUES_STRONG = [
-    "semma", "super", "mass", "vera level", "verithanam", "top class", 
-    "loved", "classic", "clean", "azhagu", "good", "nalla", "worth", "best", "tharu maru"
+# Negation patterns that invert or enforce negativity
+NEGATION_PATTERNS = [
+    r'\bnalla\s+illa\b', r'\bseri\s+illa\b', r'\bsari\s+illa\b', r'\bsariyilla\b',
+    r'\bworth\s+illa\b', r'\bset\s+aagala\b', r'\bvela\s+seiyala\b', r'\bnot\s+good\b',
+    r'\bpadam\s+mokka\b', r'\bmokka\b', r'\bworst\b', r'\bwaste\b', r'\bbore\b', 
+    r'\bcringe\b', r'\blag\b', r'\bkevalam\b', r'\bkarumam\b', r'\birritating\b'
 ]
 
-NEG_CUES_STRONG = [
-    "mokka", "worst", "waste", "bore", "cringe", "lag", "sariyilla", 
-    "nalla illa", "worth illa", "karumam", "irritating", "bad", "kevalam", "poor"
+# Explicit positive patterns
+POSITIVE_PATTERNS = [
+    r'\bsemma\b', r'\bsemmaa\b', r'\bsuper\b', r'\bmass\b', r'\bvera\s+level\b',
+    r'\bverithanam\b', r'\btop\s+class\b', r'\bloved\b', r'\bclassic\b', r'\bclean\b',
+    r'\bazhagu\b', r'\bnalla\b', r'\bworth\b', r'\bbest\b', r'\bexcellent\b'
 ]
