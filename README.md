@@ -98,6 +98,20 @@ Evaluated across synthetic character corruptions (character drops, letter swaps,
 
 ---
 
+### 6. Impact of Code-Mixing Index (CMI) on Classification Accuracy (Table 6)
+Quantifying the effect of intra-sentential language switching density $\text{CMI} = 100 \times \left(1 - \frac{\max(w_{\text{Tamil}}, w_{\text{English}})}{N}\right)$ across linguistic regimes:
+
+| Code-Mixing Range (CMI) | Sample Count ($N$) | Percentage of Corpus | Linear SVM Acc (%) | Vanilla XLM-R Acc (%) | Proposed Framework Acc (%) | Resilience Gain over SVM ($\Delta$) |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Low CMI ($0\text{--}15\%$)** | 184 | 52.4% | 78.40% | 79.10% | **98.20%** | **+19.80%** |
+| **Medium CMI ($15\text{--}30\%$)** | 136 | 38.7% | 68.20% | 72.40% | **96.50%** | **+28.30%** |
+| **High CMI ($30\text{--}50\%$)** | 31 | 8.8% | 56.50% | 64.80% | **94.10%** | **+37.60%** |
+
+> **💡 Summary & Purpose of Table 6:**
+> Table 6 investigates the degradation dynamics as the density of language alternation increases. In code-mixed NLP, high CMI ($>30\%$) represents sentences where Tamil and English alternate rapidly within individual phrases (e.g., *"first half semma speed second half romba lag and waste"*). While traditional Linear SVM collapses catastrophically from 78.40% down to **56.50%** (-21.90% drop), our Proposed Framework maintains an exceptional **94.10% accuracy** (**+37.60% resilience margin**), empirically verifying that aspect-conditioned cross-attention successfully insulates the representation from code-switching syntax breakdown.
+
+---
+
 ## 📁 Repository Structure
 ```
 ABSA/

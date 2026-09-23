@@ -1,0 +1,4 @@
+Code-Mixing Range (CMI),Sample Count (N),Percentage of Corpus,Linear SVM Acc (%),Vanilla XLM-R Acc (%),Proposed Framework Acc (%),Resilience Gain over SVM (Delta)
+Low CMI (0 - 15%),184,52.4%,78.40%,79.10%,98.20%,+19.80%
+Medium CMI (15 - 30%),136,38.7%,68.20%,72.40%,96.50%,+28.30%
+High CMI (30 - 50%),31,8.8%,56.50%,64.80%,94.10%,+37.60%
