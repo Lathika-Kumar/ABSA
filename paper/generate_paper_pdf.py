@@ -3,39 +3,82 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 from reportlab.lib.units import inch
 from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image, HRFlowable, KeepTogether
+    BaseDocTemplate, PageTemplate, Frame, Paragraph, Spacer, Table, TableStyle, Image, HRFlowable, FrameBreak, NextPageTemplate
 )
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 
 def generate_pdf():
     pdf_path = "paper/RESEARCH_PAPER_MANUSCRIPT.pdf"
-    doc = SimpleDocTemplate(
-        pdf_path,
-        pagesize=letter,
-        rightMargin=0.7*inch,
-        leftMargin=0.7*inch,
-        topMargin=0.7*inch,
-        bottomMargin=0.7*inch
-    )
+    
+    # Page dimensions: 8.5 x 11 inches (612 x 792 pt)
+    page_w, page_h = letter
+    margin = 36 # 0.5 in
+    gutter = 16 # 0.22 in
+    col_w = (page_w - 2 * margin - gutter) / 2 # 262 pt (3.64 in)
+    
+    # Page 1 Dimensions: Full width header + 2 columns below
+    title_h = 100 # pt for title + author block
+    body_h1 = page_h - margin - title_h - 10 - margin # ~610 pt
+    
+    # Page 2+ Dimensions: Full height 2 columns with header/footer clearance
+    top_margin = 42 # clearance for running header (765 pt)
+    bottom_margin = 36 # clearance for running footer (20 pt)
+    body_h2 = page_h - top_margin - bottom_margin # 714 pt
+    
+    # Page 1 Frames
+    f_top = Frame(margin, page_h - margin - title_h, page_w - 2 * margin, title_h, id='F_top',
+                  leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)
+    f_left1 = Frame(margin, margin, col_w, body_h1, id='F_left1',
+                    leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)
+    f_right1 = Frame(margin + col_w + gutter, margin, col_w, body_h1, id='F_right1',
+                     leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)
+    
+    # Page 2+ Frames
+    f_left2 = Frame(margin, bottom_margin, col_w, body_h2, id='F_left2',
+                    leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)
+    f_right2 = Frame(margin + col_w + gutter, bottom_margin, col_w, body_h2, id='F_right2',
+                     leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)
+    
+    def draw_header_footer(canvas, doc):
+        canvas.saveState()
+        canvas.setFont('Times-Roman', 7.5)
+        canvas.setFillColor(colors.HexColor('#555555'))
+        
+        # Running header on pages > 1
+        if doc.page > 1:
+            canvas.drawString(margin, 765, "LATHIKA KUMAR et al.: ASPECT-BASED SENTIMENT ANALYSIS OF TAMIL-ENGLISH CODE-MIXED TEXT")
+            canvas.drawRightString(page_w - margin, 765, str(doc.page))
+            canvas.setStrokeColor(colors.HexColor('#CCCCCC'))
+            canvas.setLineWidth(0.5)
+            canvas.line(margin, 760, page_w - margin, 760)
+            
+        # Running footer on all pages
+        canvas.drawString(margin, 20, "IEEE TRANSACTIONS ON COMPUTATIONAL LINGUISTICS & DRAVIDIAN NLP (PREPRINT)")
+        canvas.drawRightString(page_w - margin, 20, f"Page {doc.page}")
+        canvas.restoreState()
+        
+    first_page = PageTemplate(id='FirstPage', frames=[f_top, f_left1, f_right1], onPage=draw_header_footer)
+    two_col_page = PageTemplate(id='TwoCol', frames=[f_left2, f_right2], onPage=draw_header_footer)
+    
+    doc = BaseDocTemplate(pdf_path, pagesize=letter)
+    doc.addPageTemplates([first_page, two_col_page])
 
-    styles = getSampleStyleSheet()
-
-    # Custom typography
+    # Typography & Styles for 2-column layout
     title_style = ParagraphStyle(
         'DocTitle',
         fontName='Times-Bold',
-        fontSize=16,
-        leading=20,
+        fontSize=15,
+        leading=18,
         alignment=1, # Center
         textColor=colors.HexColor('#002244'),
-        spaceAfter=8
+        spaceAfter=5
     )
 
     author_style = ParagraphStyle(
         'AuthorBlock',
         fontName='Times-Bold',
-        fontSize=10.5,
-        leading=13,
+        fontSize=9.5,
+        leading=12,
         alignment=1,
         textColor=colors.HexColor('#222222'),
         spaceAfter=2
@@ -44,72 +87,72 @@ def generate_pdf():
     dept_style = ParagraphStyle(
         'DeptBlock',
         fontName='Times-Italic',
-        fontSize=8.5,
-        leading=11,
+        fontSize=8,
+        leading=10.5,
         alignment=1,
         textColor=colors.HexColor('#444444'),
-        spaceAfter=10
+        spaceAfter=6
     )
 
     h1_style = ParagraphStyle(
         'Heading1_Custom',
         fontName='Times-Bold',
-        fontSize=11,
-        leading=14,
+        fontSize=9.5,
+        leading=12,
         textColor=colors.HexColor('#003366'),
-        spaceBefore=12,
-        spaceAfter=4
+        spaceBefore=10,
+        spaceAfter=3
     )
 
     h2_style = ParagraphStyle(
         'Heading2_Custom',
         fontName='Times-BoldItalic',
-        fontSize=9.5,
-        leading=12,
+        fontSize=8.5,
+        leading=11,
         textColor=colors.HexColor('#333333'),
-        spaceBefore=8,
+        spaceBefore=7,
         spaceAfter=2
     )
 
     body_style = ParagraphStyle(
         'Body_Custom',
         fontName='Times-Roman',
-        fontSize=8.5,
-        leading=11.5,
+        fontSize=8,
+        leading=10.5,
         alignment=4, # Justified
-        spaceAfter=5
+        spaceAfter=4
     )
 
     abstract_style = ParagraphStyle(
         'Abstract_Custom',
         fontName='Times-Roman',
-        fontSize=8.5,
-        leading=11.5,
+        fontSize=8,
+        leading=10.5,
         alignment=4,
-        spaceAfter=6
+        spaceAfter=5
     )
 
     table_cell_style = ParagraphStyle(
         'TableCell',
         fontName='Times-Roman',
-        fontSize=7.5,
-        leading=9.5,
+        fontSize=6.5,
+        leading=8.5,
         alignment=1
     )
 
     table_cell_left = ParagraphStyle(
         'TableCellLeft',
         fontName='Times-Roman',
-        fontSize=7.5,
-        leading=9.5,
+        fontSize=6.5,
+        leading=8.5,
         alignment=0
     )
 
     table_hdr_style = ParagraphStyle(
         'TableHdr',
         fontName='Times-Bold',
-        fontSize=7.5,
-        leading=9.5,
+        fontSize=6.5,
+        leading=8.5,
         alignment=1,
         textColor=colors.white
     )
@@ -117,30 +160,33 @@ def generate_pdf():
     caption_style = ParagraphStyle(
         'Caption',
         fontName='Times-BoldItalic',
-        fontSize=8,
-        leading=10,
+        fontSize=7.5,
+        leading=9.5,
         alignment=1,
         textColor=colors.HexColor('#333333'),
         spaceBefore=3,
-        spaceAfter=8
+        spaceAfter=6
     )
 
     ref_style = ParagraphStyle(
         'ReferenceStyle',
         fontName='Times-Roman',
-        fontSize=7.5,
-        leading=9.5,
-        spaceAfter=3
+        fontSize=7,
+        leading=8.5,
+        alignment=4,
+        spaceAfter=2.5
     )
 
-    story = []
+    story = [NextPageTemplate('TwoCol')]
 
-    # Title & Authors
+    # ==================== PAGE 1 TOP FRAME (FULL WIDTH) ====================
     story.append(Paragraph("Aspect-Based Sentiment Analysis of Tamil-English Code-Mixed Social Media Text Using Knowledge-Enhanced Multilingual Transformers", title_style))
     story.append(Paragraph("Lathika Kumar, Co-Author Name, Dr. Mentor Name", author_style))
     story.append(Paragraph("Department of Information Technology, Karpagam College of Engineering, Coimbatore, India<br/>Email: lathikakumar798@gmail.com, {coauthor, mentor}@kce.ac.in", dept_style))
-    story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#003366'), spaceAfter=8, spaceBefore=0))
+    story.append(HRFlowable(width="100%", thickness=0.8, color=colors.HexColor('#003366'), spaceAfter=4, spaceBefore=0))
+    story.append(FrameBreak()) # Move from top full-width frame into Page 1 Column 1!
 
+    # ==================== PAGE 1 COLUMN 1 (ABSTRACT & BODY) ====================
     # Abstract
     abs_text = ("<b><i>Abstract</i>—The rapid escalation of multilingual digital discourse across social media platforms has led to widespread code-mixing, "
                 "wherein users dynamically interleave vernacular languages and English within Romanized orthography. In Dravidian languages such as Tamil, "
@@ -155,10 +201,10 @@ def generate_pdf():
                 "engine are integrated to resolve Out-Of-Vocabulary (OOV) subword fragmentation and sentiment-inversion blind spots inherent in vanilla transformers. "
                 "Benchmarked on 7,435 aspect-annotated instances derived from the DravidianCodeMix FIRE corpus, our framework elevates classification performance "
                 "from classical machine learning baselines (TF-IDF + Linear SVM: 69.64% F1) and vanilla transformers (mBERT: 72.57% F1; XLM-RoBERTa: 72.34% F1) to "
-                "96.50% Weighted Precision, 96.42% Accuracy, and 96.44% Weighted F1-Score under calibrated confidence thresholds (tau &ge; 0.85). "
+                "<b>96.50% Weighted Precision, 96.42% Accuracy, and 96.44% Weighted F1-Score</b> under calibrated confidence thresholds (&tau; &ge; 0.85). "
                 "An extensive ablation study demonstrates that knowledge fusion, aspect-conditioned query formulation, and postpositional negation resolution "
                 "yield substantial performance gains of +24.10%, +23.87%, and +14.94% in F1-score, respectively. A formal McNemar’s chi-square test confirms "
-                "the statistical significance of our architecture (&chi;<sup>2</sup> = 62.67, p = 2.45e-15, p &lt; 0.001). Furthermore, robustness evaluations "
+                "the statistical significance of our architecture (&chi;<sup>2</sup> = 62.67, p = 2.45&times;10<sup>-15</sup>, p &lt; 0.001). Furthermore, robustness evaluations "
                 "demonstrate a +23.38% resilience advantage under 25% synthetic typographic noise, while latency profiling shows an efficient execution overhead "
                 "of 29.92 ms per review on an NVIDIA Tesla T4 GPU.</b>")
     story.append(Paragraph(abs_text, abstract_style))
@@ -166,36 +212,9 @@ def generate_pdf():
     # Keywords
     kw_text = "<b><i>Index Terms</i>—Aspect-Based Sentiment Analysis (ABSA), Tamil-English Code-Mixing, Tanglish, XLM-RoBERTa, Multilingual BERT, Postpositional Negation, Cross-Attention Transformer, Dravidian NLP.</b>"
     story.append(Paragraph(kw_text, abstract_style))
-    story.append(Spacer(1, 4))
+    story.append(Spacer(1, 3))
 
-    # Section I
-    story.append(Paragraph("I. INTRODUCTION", h1_style))
-    story.append(Paragraph("A. Domain Background and Linguistic Threat Landscape", h2_style))
-    story.append(Paragraph("The proliferation of digital interaction spaces—ranging from microblogging channels (X/Twitter) and community forums to multimedia video comment sections (YouTube, Instagram Reels)—has transformed public discourse and consumer review dynamics [1]. In multilingual societies such as South India, user-generated comments rarely follow monolingual syntactic standards [2]. Instead, speakers fluidly switch between their regional vernacular (Tamil) and English within the same sentence, transcribing non-standardized phonetic Tamil utilizing the Latin alphabet, a phenomenon known sociolinguistically as code-mixing and colloquially referred to as Tanglish [3]. Modern social platforms host millions of daily product reviews, political debates, and entertainment commentaries in Tanglish [4]. While these code-mixed expressions enable authentic cultural expression, they present severe challenges for standard computational linguistics and sentiment detection systems [5].", body_style))
-    
-    story.append(Paragraph("A representative example from contemporary cinema reviews illustrates the core limitation of existing systems:<br/>"
-                           "<i>S_example: 'Indha movie story semma but acting romba mokka, music vera level.'</i><br/>"
-                           "(Translation: 'This movie's story is awesome, but the acting is very dull, the music is on another level.')<br/>"
-                           "When processed by traditional sentiment analysis models, S_example is assigned an aggregate label, typically marked as Mixed or Neutral [6]. However, this single-label assignment completely obscures the underlying opinion distribution: Story/Screenplay &rarr; Positive ('semma'); Acting/Performance &rarr; Negative ('romba mokka'); Music/Songs/BGM &rarr; Positive ('vera level'). Aspect-Based Sentiment Analysis (ABSA) addresses this deficiency by identifying individual target entities (aspects) within the utterance and classifying the sentiment polarity directed specifically toward each aspect [7].", body_style))
-
-    story.append(Paragraph("B. Technical Challenges in Code-Mixed Dravidian ABSA", h2_style))
-    story.append(Paragraph("Performing ABSA on Romanized Tamil-English social media comments introduces profound architectural difficulties that differentiate it from standard English benchmarks [8]:<br/>"
-                           "1) <i>Phonetic Transliteration and Orthographic Noise</i>: Romanized Tamil lacks standardized orthography [9]. Authors freely elongate vowels and consonants to emphasize emotional intensity (e.g., 'semmaaaaa', 'massssss', 'nallaaa'), creating an explosive subword space that fragments pretrained tokenizers into meaningless character clusters.<br/>"
-                           "2) <i>Agglutinative Syntax and Postpositional Negation</i>: In Tamil syntax, negation modifiers typically follow the adjective or verb predicate (e.g., 'story nalla illa' vs. English 'story is not good') [10]. Vanilla bidirectional transformers, trained predominantly on formal text, frequently attend heavily to the positive adjective ('nalla' = good) while failing to resolve the postpositional negative operator ('illa' = not), leading to catastrophic polarity misclassification.<br/>"
-                           "3) <i>Severe Aspect-Level Label Scarcity</i>: While shared tasks such as DravidianCodeMix (FIRE 2020/2021) [11] provide sentence-level labels, there is an absence of gold-standard aspect-annotated corpora specifically for Romanized Tamil-English social media comments.<br/>"
-                           "4) <i>Intra-Sentential Cross-Contamination</i>: When contrasting sentiments co-occur across conjunction boundaries ('but', 'aana', 'aanal'), unconstrained self-attention layers compute cross-token correlations between conflicting descriptors ('semma' and 'mokka'), diluting the aspect-specific gradient signal.", body_style))
-
-    story.append(Paragraph("C. Contextual Transformers vs. Linguistic Code-Mixed Invariants", h2_style))
-    story.append(Paragraph("To overcome the vulnerabilities of vanilla neural architectures, recent NLP paradigms have investigated hybrid neuro-symbolic systems and domain-adapted cross-lingual embeddings [12]. Multilingual models such as Multilingual BERT (mBERT) [13] and XLM-RoBERTa (XLM-R) [14] capture shared multilingual representations via masked language modeling over massive cross-lingual corpora. However, because these models are trained predominantly on formal Wikipedia dumps, their tokenizers split colloquial Tamil slang words (such as 'mokka', 'vera level', 'tharu maru') into fragmented subwords, inducing high Out-Of-Vocabulary (OOV) error rates. By coupling the deep contextual representations of cross-lingual transformers with explicit knowledge-guided clause segmentation and postpositional negation operators, an unforgeable and highly accurate sentiment classification boundary can be established [15].", body_style))
-
-    story.append(Paragraph("D. Key Research Objectives and Contributions", h2_style))
-    story.append(Paragraph("In this work, we propose a unified, two-stage Knowledge-Enhanced Multilingual Cross-Attention Framework engineered specifically for Tamil-English code-mixed social media text. The primary contributions of this paper are summarized as follows:<br/>"
-                           "1) <i>Aspect-Level Benchmark Formulation</i>: We curate and annotate a gold-standard Tamil-English ABSA benchmark comprising 7,435 aspect-annotated instances mapped across 9 cinema review dimensions.<br/>"
-                           "2) <i>Linguistic Preprocessing & Normalization Engine</i>: We design a specialized code-mixed preprocessing layer that handles phonetic character elongation, social media artifacts, and normalizes Romanized Tamil postpositional negation variants.<br/>"
-                           "3) <i>Clause-Aware Cross-Attention Query Formulation</i>: We formulate an aspect-conditioned query mechanism that isolates the syntactic clause belonging to the aspect, preventing sentiment leakage across contrasting clauses.<br/>"
-                           "4) <i>Knowledge-Enhanced Decision Fusion Head</i>: We design a hybrid decision head fusing neural posterior probabilities with explicit code-mixed polarity lexicons and negation-first arbitration, elevating performance to 96.50% Precision and 96.44% F1-score.<br/>"
-                           "5) <i>Rigorous Empirical, Ablation, and Statistical Validation</i>: We evaluate five model paradigms, perform component-level ablation studies, verify statistical significance via McNemar’s chi-square test (&chi;<sup>2</sup> = 62.67, p &lt; 0.001), profile hardware inference efficiency across GPU and CPU platforms, and conduct a detailed qualitative linguistic error taxonomy across remaining failure modes.", body_style))
-
+    # Helper function for tables fitting in 262 pt width
     def make_table(headers, data, col_widths):
         table_data = []
         hdr_row = [Paragraph(f"<b>{h}</b>", table_hdr_style) for h in headers]
@@ -214,55 +233,81 @@ def generate_pdf():
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#003366')),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 4),
-            ('TOPPADDING', (0, 0), (-1, 0), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+            ('TOPPADDING', (0, 0), (-1, -1), 2),
+            ('LEFTPADDING', (0, 0), (-1, -1), 2),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 2),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CCCCCC')),
             ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F8F9FA')])
         ]))
         return t
 
-    # Table 1: Mathematical Notations
-    story.append(Paragraph("E. Mathematical Notation and Tensor Dimensions", h2_style))
+    # Section I
+    story.append(Paragraph("I. INTRODUCTION", h1_style))
+    story.append(Paragraph("A. Domain Background and Linguistic Context", h2_style))
+    story.append(Paragraph("The proliferation of digital interaction spaces—ranging from microblogging channels (X/Twitter) to multimedia video comment sections (YouTube, Instagram Reels)—has transformed public discourse and consumer review dynamics [1]. In multilingual societies such as South India, user-generated comments rarely follow monolingual syntactic standards [2]. Instead, speakers fluidly switch between their regional vernacular (Tamil) and English within the same sentence, transcribing non-standardized phonetic Tamil utilizing the Latin alphabet, a phenomenon known sociolinguistically as code-mixing and colloquially referred to as Tanglish [3]. Modern social platforms host millions of daily product reviews, political debates, and entertainment commentaries in Tanglish [4]. While these code-mixed expressions enable authentic cultural expression, they present severe challenges for standard computational linguistics and sentiment detection systems [5].", body_style))
+    
+    story.append(Paragraph("A representative example from contemporary cinema reviews illustrates the core limitation of existing systems:<br/>"
+                           "<i>S_ex: 'Indha movie story semma but acting romba mokka, music vera level.'</i><br/>"
+                           "(Translation: 'This movie's story is awesome, but the acting is very dull, the music is on another level.')<br/>"
+                           "When processed by traditional sentiment analysis models, S_ex is assigned an aggregate label, typically marked as Mixed or Neutral [6]. However, this single-label assignment completely obscures the underlying opinion distribution: Story/Screenplay &rarr; Positive ('semma'); Acting/Performance &rarr; Negative ('romba mokka'); Music/Songs/BGM &rarr; Positive ('vera level'). Aspect-Based Sentiment Analysis (ABSA) addresses this deficiency by identifying individual target entities (aspects) within the utterance and classifying the sentiment polarity directed specifically toward each aspect [7].", body_style))
+
+    story.append(Paragraph("B. Technical Challenges in Code-Mixed Dravidian ABSA", h2_style))
+    story.append(Paragraph("Performing ABSA on Romanized Tamil-English social media comments introduces profound architectural difficulties that differentiate it from standard English benchmarks [8]:<br/>"
+                           "1) <i>Phonetic Transliteration and Orthographic Noise</i>: Romanized Tamil lacks standardized orthography [9]. Authors freely elongate vowels and consonants to emphasize emotional intensity (e.g., 'semmaaaaa', 'massssss', 'nallaaa'), creating an explosive subword space that fragments pretrained tokenizers into meaningless character clusters.<br/>"
+                           "2) <i>Agglutinative Syntax and Postpositional Negation</i>: In Tamil syntax, negation modifiers typically follow the adjective or verb predicate (e.g., 'story nalla illa' vs. English 'story is not good') [10]. Vanilla bidirectional transformers attend heavily to the positive adjective ('nalla' = good) while failing to resolve the postpositional negative operator ('illa' = not), leading to catastrophic polarity misclassification.<br/>"
+                           "3) <i>Severe Aspect-Level Label Scarcity</i>: While shared tasks such as DravidianCodeMix (FIRE 2020/2021) [11] provide sentence-level labels, there is an absence of gold-standard aspect-annotated corpora specifically for Romanized Tamil-English social media comments.<br/>"
+                           "4) <i>Intra-Sentential Cross-Contamination</i>: When contrasting sentiments co-occur across conjunction boundaries ('but', 'aana', 'aanal'), unconstrained self-attention computes cross-token correlations between conflicting descriptors, diluting the aspect-specific gradient signal.", body_style))
+
+    story.append(Paragraph("C. Contextual Transformers vs. Code-Mixed Invariants", h2_style))
+    story.append(Paragraph("To overcome the vulnerabilities of vanilla neural architectures, recent NLP paradigms have investigated hybrid neuro-symbolic systems and domain-adapted cross-lingual embeddings [12]. Multilingual models such as Multilingual BERT (mBERT) [13] and XLM-RoBERTa (XLM-R) [14] capture shared multilingual representations via masked language modeling over massive cross-lingual corpora. However, because these models are trained predominantly on formal Wikipedia dumps, their tokenizers split colloquial Tamil slang words (such as 'mokka', 'vera level', 'tharu maru') into fragmented subwords, inducing high Out-Of-Vocabulary (OOV) error rates. By coupling deep contextual representations with explicit knowledge-guided clause segmentation and postpositional negation operators, an unforgeable and highly accurate sentiment classification boundary can be established [15].", body_style))
+
+    story.append(Paragraph("D. Key Research Objectives and Contributions", h2_style))
+    story.append(Paragraph("The primary contributions of this paper are summarized as follows:<br/>"
+                           "1) <i>Aspect-Level Benchmark Formulation</i>: We curate and annotate a gold-standard Tamil-English ABSA benchmark comprising 7,435 aspect-annotated instances mapped across 9 cinema review dimensions.<br/>"
+                           "2) <i>Linguistic Normalization Engine</i>: We design a specialized code-mixed preprocessing layer that handles phonetic character elongation and normalizes Romanized Tamil postpositional negation variants.<br/>"
+                           "3) <i>Clause-Aware Cross-Attention Query Formulation</i>: We formulate an aspect-conditioned query mechanism that isolates the syntactic clause belonging to the aspect, preventing sentiment leakage.<br/>"
+                           "4) <i>Knowledge-Enhanced Decision Head</i>: We design a hybrid decision head fusing neural posterior probabilities with explicit code-mixed polarity lexicons and negation-first arbitration, elevating performance to 96.50% Precision and 96.44% F1-score.<br/>"
+                           "5) <i>Rigorous Empirical Validation</i>: We perform component ablation studies, verify statistical significance via McNemar’s chi-square test (&chi;<sup>2</sup> = 62.67, p &lt; 0.001), profile hardware latency on GPU and CPU, and conduct a qualitative linguistic error taxonomy across remaining failure modes.", body_style))
+
+    # Table 1: Mathematical Notations (width = 262 pt)
+    story.append(Paragraph("E. Mathematical Notation", h2_style))
     story.append(Paragraph("Table I summarizes the principal mathematical notations and dimensional specifications employed across our formulations.", body_style))
     t1_data = [
-        ["S", "Sequence of tokens", "Raw input code-mixed Tanglish sentence"],
-        ["C_A", "Sequence of tokens", "Isolated syntactic clause containing aspect A"],
-        ["A", "String / Span", "Extracted aspect term (A in A_set)"],
-        ["C", "Categorical label", "Mapped aspect category (C in {1, ..., 9})"],
+        ["S", "Seq Tokens", "Raw input code-mixed Tanglish sentence"],
+        ["C_A", "Seq Tokens", "Syntactic clause containing aspect A"],
+        ["A", "Span", "Extracted aspect term (A in A_set)"],
+        ["C", "Label", "Mapped aspect category (C in {1, ..., 9})"],
         ["E_Q", "R^(T x d_m)", "Query sequence embedding tensor"],
         ["A_cross", "R^(T x T)", "Cross-attention alignment matrix"],
-        ["P_Trans(y | A, S)", "Scalar in [0, 1]", "Neural posterior probability of positive polarity"],
-        ["S_fused", "Scalar in [0, 1]", "Knowledge-fused composite sentiment score"],
-        ["tau", "Scalar > 0", "Calibrated confidence decision threshold (tau = 0.85)"],
-        ["y_hat", "{0, 1}", "Binary sentiment polarity (0 = Negative, 1 = Positive)"]
+        ["P_Trans", "Scalar [0,1]", "Posterior probability of positive polarity"],
+        ["S_fused", "Scalar [0,1]", "Knowledge-fused composite sentiment score"],
+        ["tau", "Scalar > 0", "Calibrated confidence threshold (tau = 0.85)"],
+        ["y_hat", "{0, 1}", "Binary sentiment (0 = Negative, 1 = Positive)"]
     ]
-    story.append(make_table(["Symbol", "Dimension", "Definition"], t1_data, [1.0*inch, 1.4*inch, 4.3*inch]))
+    story.append(make_table(["Symbol", "Dimension", "Definition"], t1_data, [45, 55, 162]))
     story.append(Paragraph("TABLE I. PRINCIPAL NOTATION AND TENSOR DIMENSIONS", caption_style))
 
     # Section II
     story.append(Paragraph("II. RELATED WORK AND LITERATURE REVIEW", h1_style))
-    story.append(Paragraph("A. Aspect-Based Sentiment Analysis in Monolingual Corpora", h2_style))
-    story.append(Paragraph("Aspect-Based Sentiment Analysis has been extensively investigated in high-resource, monolingual languages such as English and Chinese [16]. Early benchmark frameworks established by SemEval (2014 Task 4, 2016 Task 5) formulated ABSA as two coupled subtasks: Aspect Term Extraction (ATE) and Aspect-Level Sentiment Classification (ALSC) [17]. Traditional machine learning approaches utilized Conditional Random Fields (CRFs) with hand-crafted syntactic features and dependency tree relations [18]. With the advent of deep learning, recurrent neural networks such as BiLSTM-Attention and Interactive Attention Networks (IAN) were introduced to model the semantic interaction between the aspect target and context words [19]. More recently, transformer-based architectures (BERT-PT, RoBERTa, DeBERTa) achieved state-of-the-art results by formulating ALSC as sentence-pair classification [20]. However, these monolingual architectures assume grammatical standardization, canonical spelling, and uniform dependency tree structures, assumptions that fail completely when applied to noisy, unstructured code-mixed social media streams.", body_style))
+    story.append(Paragraph("A. Monolingual Aspect-Based Sentiment Analysis", h2_style))
+    story.append(Paragraph("Aspect-Based Sentiment Analysis has been extensively investigated in high-resource, monolingual languages such as English and Chinese [16]. Early benchmark frameworks established by SemEval (2014 Task 4, 2016 Task 5) formulated ABSA as two coupled subtasks: Aspect Term Extraction (ATE) and Aspect-Level Sentiment Classification (ALSC) [17]. Traditional machine learning approaches utilized Conditional Random Fields (CRFs) with hand-crafted syntactic features and dependency tree relations [18]. With deep learning, recurrent neural networks such as BiLSTM-Attention and Interactive Attention Networks (IAN) were introduced to model semantic interaction [19]. More recently, transformer architectures (BERT-PT, RoBERTa, DeBERTa) achieved state-of-the-art results [20]. However, these monolingual architectures assume grammatical standardization and canonical spelling, assumptions that fail completely when applied to noisy, unstructured code-mixed social media streams.", body_style))
 
-    story.append(Paragraph("B. Code-Mixed and Low-Resource Dravidian Sentiment Analysis", h2_style))
-    story.append(Paragraph("Research in code-mixed sentiment analysis has gained significant momentum through shared tasks organized by the Forum for Information Retrieval Evaluation (FIRE) and DravidianLangTech [21]. Chakravarthi et al. introduced the DravidianCodeMix corpus [11], releasing large-scale Romanized YouTube comments for Tamil, Malayalam, and Kannada sentiment classification. Initial baselines explored TF-IDF representations paired with Support Vector Machines (SVM), Naïve Bayes, and shallow CNN-BiLSTM networks, recording accuracy scores in the 58%–68% range [22]. Subsequent studies benchmarked multilingual transformer architectures, including Multilingual BERT (mBERT), IndicBERT, and XLM-RoBERTa [23]. While these studies advanced sentence-level sentiment classification for Tamil-English, they suffer from a fundamental limitation: they treat each post as a monolith, assigning a single polarity to multi-clause sentences with opposing sentiments [24]. Furthermore, existing Dravidian sentiment benchmarks do not provide token-level aspect annotations, leaving a critical gap in fine-grained ABSA literature.", body_style))
+    story.append(Paragraph("B. Code-Mixed Dravidian Sentiment Analysis", h2_style))
+    story.append(Paragraph("Research in code-mixed sentiment analysis has gained significant momentum through shared tasks organized by the Forum for Information Retrieval Evaluation (FIRE) and DravidianLangTech [21]. Chakravarthi et al. introduced the DravidianCodeMix corpus [11], releasing large-scale Romanized YouTube comments for Tamil, Malayalam, and Kannada sentiment classification. Initial baselines explored TF-IDF representations paired with Support Vector Machines (SVM), Naïve Bayes, and shallow CNN-BiLSTM networks, recording accuracy scores in the 58%–68% range [22]. Subsequent studies benchmarked multilingual transformer architectures, including Multilingual BERT (mBERT), IndicBERT, and XLM-RoBERTa [23]. While these studies advanced sentence-level classification, they treat each post as a monolith, assigning a single polarity to multi-clause sentences with opposing sentiments [24]. Furthermore, existing Dravidian benchmarks do not provide token-level aspect annotations, leaving a critical gap in fine-grained ABSA literature.", body_style))
 
-    story.append(Paragraph("C. The MADTRAS Benchmark and Indian-Language ABSA", h2_style))
-    story.append(Paragraph("The feasibility of fine-grained ABSA in Indian languages was demonstrated by the MADTRAS dataset introduced by Preethi et al. [25]. MADTRAS established an annotated corpus for aspect-based sentiment analysis of Tamil movie reviews, reporting performance across mBERT and BiLSTM baselines. Similarly, in Indo-Aryan languages, Patwa et al. investigated code-mixed Hindi-English (Hinglish) ABSA, formulating joint extraction and sentiment classification pipelines [26]. However, existing Tamil ABSA benchmarks like MADTRAS focused predominantly on native Tamil script sourced from structured feedback forms, rather than informal Romanized Tanglish social media text. Consequently, prior models are not equipped to handle the severe orthographic noise, character elongations, and slang switching characteristic of contemporary social platforms.", body_style))
-
-    story.append(Paragraph("D. Methodological Taxonomy of Multimodal and Knowledge Fusion", h2_style))
-    story.append(Paragraph("To enhance transformer accuracy in low-resource and noisy domains, recent literature has explored hybrid knowledge fusion strategies [27]. In code-mixed NLP, fusion paradigms generally fall into three architectural categories: 1) Early Feature Concatenation, 2) Late Decision Averaging, and 3) Cross-Attention Knowledge-Enhanced Fusion (Proposed Approach). Discrete linguistic rules, syntactic clause boundaries, and postpositional negation constraints are dynamically injected into the transformer's cross-attention and inference calibration heads. Table II compares relevant ABSA frameworks.", body_style))
-
+    story.append(Paragraph("C. Comparative Methodological Taxonomy", h2_style))
+    story.append(Paragraph("Table II compares relevant ABSA and Dravidian sentiment classification frameworks across linguistic scope, script representation, task granularity, negation handling, and empirical metrics.", body_style))
     t2_data = [
-        ["MesoNet / SVM Baseline [22]", "Tamil-English", "Romanized", "Sentence-Level", "Bag-of-words (None)", "64.5% / 67.2%", "Ultra-low (< 1 ms)"],
-        ["DravidianCodeMix Baseline [11]", "Tamil-English", "Romanized", "Sentence-Level", "None", "69.3% / 69.6%", "Low (1.2 ms)"],
-        ["MADTRAS Benchmark [25]", "Pure Tamil", "Native Script", "Aspect-Level (ABSA)", "Static BiLSTM attention", "78.4% / 76.1%", "Moderate (45 ms)"],
-        ["Vanilla mBERT [13]", "Multilingual", "Native/Roman", "Sentence-Level", "Self-attention only", "75.4% / 72.5%", "Moderate (12.3 ms)"],
-        ["Pure XLM-RoBERTa [14]", "Multilingual", "Romanized", "Aspect-Level (ALSC)", "Self-attention only", "72.3% / 72.3%", "Moderate (28.0 ms)"],
-        ["Proposed Framework (Ours)", "Tamil-English", "Romanized (Tanglish)", "Two-Stage ABSA", "Syntactic Postpositional", "96.4% / 96.4%", "Efficient (29.9 ms)"]
+        ["MesoNet / SVM [22]", "Tamil-Eng", "Sentence", "67.2%", "< 1 ms"],
+        ["DravidianCodeMix [11]", "Tamil-Eng", "Sentence", "69.6%", "1.2 ms"],
+        ["MADTRAS [25]", "Pure Tamil", "Aspect", "76.1%", "45.0 ms"],
+        ["Vanilla mBERT [13]", "Multilingual", "Sentence", "72.5%", "12.3 ms"],
+        ["Pure XLM-R [14]", "Multilingual", "Aspect", "72.3%", "28.0 ms"],
+        ["Proposed Framework", "Tanglish", "2-Stage ABSA", "96.4%", "29.9 ms"]
     ]
-    story.append(make_table(["Model / Benchmark", "Language", "Script", "Task Level", "Negation Handling", "Accuracy / F1", "Latency Overhead"], t2_data, [1.5*inch, 0.9*inch, 0.9*inch, 1.0*inch, 1.0*inch, 0.8*inch, 0.6*inch]))
-    story.append(Paragraph("TABLE II. COMPARATIVE TAXONOMY OF RELEVANT ABSA AND SENTIMENT FRAMEWORKS", caption_style))
+    story.append(make_table(["Model / Benchmark", "Language", "Task Level", "F1 (%)", "Latency"], t2_data, [76, 50, 52, 42, 42]))
+    story.append(Paragraph("TABLE II. TAXONOMY OF RELEVANT ABSA FRAMEWORKS", caption_style))
 
     # Section III
     story.append(Paragraph("III. PROBLEM FORMULATION AND SYSTEM ARCHITECTURE", h1_style))
@@ -271,10 +316,10 @@ def generate_pdf():
 
     story.append(Paragraph("B. Linguistic Preprocessing and Normalization Engine", h2_style))
     story.append(Paragraph("To eliminate lexical dispersion caused by informal social media typing, raw tokens undergo a deterministic normalization transform:<br/>"
-                           "1) <i>Phonetic Character Elongation Reduction</i>: Social media users convey affective intensity via repeated characters (e.g., 'semmaaaaa'). All character runs of length &ge; 3 are collapsed to a canonical length of 2.<br/>"
+                           "1) <i>Phonetic Elongation Reduction</i>: Social media users convey affective intensity via repeated characters (e.g., 'semmaaaaa'). All character runs of length &ge; 3 are collapsed to a canonical length of 2.<br/>"
                            "2) <i>Postpositional Negation Unification</i>: Romanized Tamil contains widespread spelling variations of the negative verb particle illai. The preprocessor standardizes all orthographic variants ('ila', 'illai', 'ile', 'illaye' &rarr; 'illa'; 'sari illa', 'seri illa' &rarr; 'sariyilla').", body_style))
 
-    story.append(Paragraph("C. Syntactic Clause Segmentation and Aspect Context Binding", h2_style))
+    story.append(Paragraph("C. Syntactic Clause Segmentation and Context Binding", h2_style))
     story.append(Paragraph("When multi-clause comments contain contrasting sentiments across conjunctions, global self-attention across the full sentence causes polarity bleeding. To prevent this, we implement a syntactic clause segmenter that splits by delimiter set B = {'but', 'aana', 'aanal', 'however', 'yet', ',', ';'}. The target aspect A is bound strictly to the clause C_A that subsumes its token span. If no conjunction boundary is present, C_A defaults to a localized symmetric context window of k = 4 tokens surrounding A.", body_style))
 
     story.append(Paragraph("D. Aspect-Conditioned Cross-Attention Transformer", h2_style))
@@ -287,134 +332,134 @@ def generate_pdf():
 
     # Section IV
     story.append(Paragraph("IV. MATHEMATICAL FORMULATION AND THEORETICAL ANALYSIS", h1_style))
-    story.append(Paragraph("A. Loss Function Formulation and Class Imbalance Calibration", h2_style))
-    story.append(Paragraph("During training, the transformer parameters are optimized using composite cross-entropy loss augmented with weight decay regularization under the AdamW optimizer (weight decay coefficient = 0.01). Batch-level loss is averaged across all aspect-annotated sequences.", body_style))
+    story.append(Paragraph("A. Loss Function Formulation", h2_style))
+    story.append(Paragraph("During training, transformer parameters are optimized using composite cross-entropy loss augmented with weight decay regularization under the AdamW optimizer (weight decay coefficient = 0.01). Batch-level loss is averaged across all aspect-annotated sequences.", body_style))
 
-    story.append(Paragraph("B. Asymptotic Time and Space Complexity Analysis", h2_style))
-    story.append(Paragraph("1) Linguistic Preprocessing: Regex substitution over N tokens runs in O(N) deterministic time.<br/>"
+    story.append(Paragraph("B. Computational Complexity Analysis", h2_style))
+    story.append(Paragraph("1) Preprocessing: Regex substitution over N tokens runs in O(N) deterministic time.<br/>"
                            "2) Clause Segmentation: Delimiter matching runs in linear string scanning time O(N).<br/>"
                            "3) Transformer Encoding: For sequence length L (L &le; 128), self-attention across 12 heads scales as O(L^2 * d_m) + O(L * d_m^2).<br/>"
-                           "4) Overall Time Complexity: Bound is O(N + L^2 d_m + L d_m^2), which is asymptotically O(1) with respect to sentence length for fixed L=128.<br/>"
+                           "4) Overall Bound: O(N + L^2 d_m + L d_m^2), asymptotically O(1) for fixed L=128.<br/>"
                            "5) Memory Footprint: The model requires 1,114.8 MB of memory on disk and occupies 2,184 MB of GPU VRAM during inference, comfortably executing within standard edge accelerators.", body_style))
 
     # Section V
     story.append(Paragraph("V. DATASET AND EXPERIMENTAL METHODOLOGY", h1_style))
     story.append(Paragraph("A. Corpus Acquisition and Aspect Annotation Protocol", h2_style))
-    story.append(Paragraph("The experimental corpus was derived from the official DravidianCodeMix FIRE benchmark dataset [11], consisting of 44,020 Romanized Tamil-English social media comments. Following the annotation taxonomies established in MADTRAS [25], comments were filtered and annotated across 9 distinct cinema review aspect dimensions: Overall Movie, Music/Songs/BGM, Acting/Performance, Direction, Story/Screenplay, Comedy/Humour, Climax/Pacing, Cinematography/Visuals, and Editing. This curation yielded 7,435 fine-grained aspect-annotated instances. The dataset was partitioned into an 85% training set (6,319 instances) and a 15% held-out test set (1,116 instances) using stratified sampling.", body_style))
+    story.append(Paragraph("The experimental corpus was derived from the official DravidianCodeMix FIRE benchmark dataset [11], consisting of 44,020 Romanized Tamil-English social media comments. Following MADTRAS [25], comments were filtered and annotated across 9 distinct cinema review aspect dimensions: Overall Movie, Music/Songs/BGM, Acting/Performance, Direction, Story/Screenplay, Comedy/Humour, Climax/Pacing, Cinematography/Visuals, and Editing. This curation yielded 7,435 fine-grained aspect-annotated instances. The dataset was partitioned into an 85% training set (6,319 instances) and a 15% held-out test set (1,116 instances) using stratified sampling.", body_style))
 
-    story.append(Paragraph("B. Implementation Details and Hyperparameter Configuration", h2_style))
-    story.append(Paragraph("The framework was implemented in PyTorch 2.2 and Hugging Face transformers on an NVIDIA Tesla T4 GPU (16 GB VRAM). Models were optimized using AdamW with initial learning rate eta = 2e-5, linear learning rate warmup for the first 10% of steps, weight decay lambda = 0.01, batch size of 16 for training and 32 for evaluation, maximum sequence length of 128 tokens, and mixed-precision (fp16) floating-point acceleration. Training completed across 3 epochs in under 10 minutes.", body_style))
+    story.append(Paragraph("B. Implementation Details and Hyperparameters", h2_style))
+    story.append(Paragraph("The framework was implemented in PyTorch 2.2 and Hugging Face transformers on an NVIDIA Tesla T4 GPU (16 GB VRAM). Models were optimized using AdamW with initial learning rate &eta; = 2&times;10<sup>-5</sup>, linear warmup for the first 10% of steps, weight decay &lambda; = 0.01, batch size 16 for training and 32 for evaluation, maximum sequence length 128 tokens, and mixed-precision (fp16) floating-point acceleration. Training completed across 3 epochs in under 10 minutes.", body_style))
 
     # Section VI
     story.append(Paragraph("VI. EXPERIMENTAL RESULTS AND BENCHMARK EVALUATIONS", h1_style))
-    story.append(Paragraph("A. Model Comparison Benchmark (Table I)", h2_style))
-    story.append(Paragraph("Table I reports the master benchmark comparing our Proposed Framework against traditional machine learning baselines and multilingual transformers.", body_style))
+    story.append(Paragraph("A. Model Comparison Benchmark (Table III)", h2_style))
+    story.append(Paragraph("Table III reports the master benchmark comparing our Proposed Framework against traditional machine learning baselines and multilingual transformers.", body_style))
     t_comp = [
-        ["Traditional Baseline: TF-IDF + Logistic Regression", "64.53%", "67.29%", "64.53%", "67.29%"],
-        ["Traditional Baseline: TF-IDF + Linear SVM", "69.31%", "70.00%", "69.31%", "69.64%"],
-        ["Multilingual BERT (mBERT) - Sentence Level", "75.42%", "73.58%", "75.42%", "72.57%"],
-        ["mBERT (Aspect-Conditioned ALSC)", "76.16%", "72.21%", "76.16%", "72.41%"],
-        ["XLM-RoBERTa (Aspect-Conditioned ALSC)", "72.36%", "72.42%", "72.36%", "72.34%"],
-        ["Proposed: Knowledge-Enhanced XLM-R (Unfiltered)", "76.64%", "76.65%", "76.64%", "76.63%"],
-        ["Proposed: Knowledge-Enhanced XLM-R (High-Precision Tier, tau >= 0.85)", "96.42%", "96.50%", "96.42%", "96.44%"]
+        ["TF-IDF + Logistic Reg.", "64.53%", "67.29%", "64.53%", "67.29%"],
+        ["TF-IDF + Linear SVM", "69.31%", "70.00%", "69.31%", "69.64%"],
+        ["mBERT (Sentence-Level)", "75.42%", "73.58%", "75.42%", "72.57%"],
+        ["mBERT (Aspect ALSC)", "76.16%", "72.21%", "76.16%", "72.41%"],
+        ["XLM-R (Aspect ALSC)", "72.36%", "72.42%", "72.36%", "72.34%"],
+        ["Proposed (Unfiltered)", "76.64%", "76.65%", "76.64%", "76.63%"],
+        ["Proposed (tau >= 0.85)", "96.42%", "96.50%", "96.42%", "96.44%"]
     ]
-    story.append(make_table(["Model Architecture", "Accuracy (%)", "Precision (%)", "Recall (%)", "Weighted F1 (%)"], t_comp, [2.7*inch, 1.0*inch, 1.0*inch, 1.0*inch, 1.0*inch]))
-    story.append(Paragraph("TABLE I. COMPARATIVE PERFORMANCE ACROSS BASELINES AND TRANSFORMERS", caption_style))
+    story.append(make_table(["Model Architecture", "Acc (%)", "Prec (%)", "Rec (%)", "F1 (%)"], t_comp, [82, 45, 45, 45, 45]))
+    story.append(Paragraph("TABLE III. COMPARATIVE PERFORMANCE ACROSS MODELS", caption_style))
 
     if os.path.exists("results/figure1_model_comparison.png"):
-        story.append(Image("results/figure1_model_comparison.png", width=5.5*inch, height=2.8*inch))
+        story.append(Image("results/figure1_model_comparison.png", width=255, height=135))
         story.append(Paragraph("Fig. 1. Comparative Performance across Baseline ML, Multilingual Transformers, and Proposed Framework.", caption_style))
 
-    story.append(Paragraph("B. Comprehensive Ablation Study (Table II)", h2_style))
-    story.append(Paragraph("Table II isolates the individual empirical contribution of each architectural component.", body_style))
+    story.append(Paragraph("B. Comprehensive Ablation Study (Table IV)", h2_style))
+    story.append(Paragraph("Table IV isolates the individual empirical contribution of each architectural component.", body_style))
     t_abl = [
-        ["Full Proposed Framework", "96.42%", "96.50%", "96.44%", "0.00% (Reference)"],
-        ["- Without Preprocessing (Raw Text)", "88.35%", "89.10%", "88.60%", "-7.84%"],
-        ["- Without Knowledge-Enhanced Fusion (Pure XLM-R)", "72.36%", "72.42%", "72.34%", "-24.10%"],
-        ["- Without Postpositional Negation Normalizer", "81.14%", "82.05%", "81.50%", "-14.94%"],
-        ["- Without Aspect-Conditioned Prompting", "75.42%", "73.58%", "72.57%", "-23.87%"]
+        ["Full Proposed Framework", "96.42%", "96.50%", "96.44%", "Ref (0.0%)"],
+        ["- Without Preprocessing", "88.35%", "89.10%", "88.60%", "-7.84%"],
+        ["- Without Knowledge Fusion", "72.36%", "72.42%", "72.34%", "-24.10%"],
+        ["- Without Negation Normalizer", "81.14%", "82.05%", "81.50%", "-14.94%"],
+        ["- Without Aspect Query", "75.42%", "73.58%", "72.57%", "-23.87%"]
     ]
-    story.append(make_table(["Configuration / Setting", "Accuracy (%)", "Precision (%)", "F1-Score (%)", "Performance Drop"], t_abl, [2.9*inch, 1.0*inch, 1.0*inch, 1.0*inch, 0.8*inch]))
-    story.append(Paragraph("TABLE II. ABLATION STUDY RESULTS (COMPONENT IMPACT ON PERFORMANCE)", caption_style))
+    story.append(make_table(["Ablation Setting", "Acc (%)", "Prec (%)", "F1 (%)", "Drop"], t_abl, [82, 45, 45, 45, 45]))
+    story.append(Paragraph("TABLE IV. ABLATION STUDY RESULTS", caption_style))
 
     if os.path.exists("results/figure2_ablation_study.png"):
-        story.append(Image("results/figure2_ablation_study.png", width=5.5*inch, height=2.6*inch))
+        story.append(Image("results/figure2_ablation_study.png", width=255, height=125))
         story.append(Paragraph("Fig. 2. Ablation Study: Performance Impact of Removing Individual Framework Components.", caption_style))
 
-    story.append(Paragraph("C. Statistical Significance Hypothesis Testing (Table III)", h2_style))
-    story.append(Paragraph("Table III reports formal hypothesis tests on the held-out evaluation set (N = 351 paired instances).", body_style))
+    story.append(Paragraph("C. Statistical Significance Hypothesis Testing (Table V)", h2_style))
+    story.append(Paragraph("Table V reports formal hypothesis tests on the held-out evaluation set (N = 351 paired instances).", body_style))
     t_stat = [
-        ["Proposed Framework vs. Linear SVM", "McNemar's chi^2", "chi^2 = 62.67", "1", "2.45e-15", "p < 0.001", "Null Hypothesis Rejected"],
-        ["Proposed Framework vs. Logistic Regression", "McNemar's chi^2", "chi^2 = 78.41", "1", "8.37e-19", "p < 0.001", "Null Hypothesis Rejected"],
-        ["Proposed Framework vs. Vanilla mBERT", "Paired t-test", "t = 8.92", "350", "1.21e-17", "p < 0.001", "Superior Contextual Focus"],
-        ["Proposed Framework vs. Pure XLM-RoBERTa", "Paired t-test", "t = 11.46", "350", "3.58e-26", "p < 0.001", "Confirms Benefit of Fusion"],
-        ["With Preprocessing vs. Without Preproc", "Wilcoxon Rank", "W = 1240.5", "350", "4.12e-09", "p < 0.001", "Validates Normalization"]
+        ["Proposed vs. Linear SVM", "McNemar", "chi2=62.67", "2.45e-15", "p < 0.001"],
+        ["Proposed vs. Log. Reg.", "McNemar", "chi2=78.41", "8.37e-19", "p < 0.001"],
+        ["Proposed vs. mBERT", "Paired t", "t=8.92", "1.21e-17", "p < 0.001"],
+        ["Proposed vs. XLM-R", "Paired t", "t=11.46", "3.58e-26", "p < 0.001"],
+        ["With vs. Without Preproc", "Wilcoxon", "W=1240.5", "4.12e-09", "p < 0.001"]
     ]
-    story.append(make_table(["Comparison Pair", "Statistical Test", "Statistic", "df", "p-value", "Significance", "Statistical Inference"], t_stat, [1.5*inch, 1.1*inch, 0.9*inch, 0.4*inch, 0.8*inch, 0.8*inch, 1.2*inch]))
-    story.append(Paragraph("TABLE III. STATISTICAL SIGNIFICANCE HYPOTHESIS TESTING", caption_style))
+    story.append(make_table(["Comparison Pair", "Test", "Statistic", "p-value", "Signif."], t_stat, [78, 48, 46, 44, 46]))
+    story.append(Paragraph("TABLE V. STATISTICAL SIGNIFICANCE HYPOTHESIS TESTING", caption_style))
 
     if os.path.exists("results/figure3_confusion_matrix.png"):
-        story.append(Image("results/figure3_confusion_matrix.png", width=3.8*inch, height=3.0*inch))
+        story.append(Image("results/figure3_confusion_matrix.png", width=210, height=165))
         story.append(Paragraph("Fig. 3. Confusion Matrix of Proposed Framework under High-Precision Tier (96.5% Precision).", caption_style))
 
-    story.append(Paragraph("D. Computational Efficiency and Hardware Latency Profiling (Table IV)", h2_style))
-    story.append(Paragraph("Table IV documents parameter efficiency, disk footprint, VRAM consumption, and inference latency across GPU and CPU hardware.", body_style))
+    story.append(Paragraph("D. Computational Efficiency & Latency Profiling (Table VI)", h2_style))
+    story.append(Paragraph("Table VI documents parameter efficiency, disk footprint, VRAM consumption, and inference latency across GPU and CPU hardware.", body_style))
     t_eff = [
-        ["Traditional Baseline: Linear SVM", "0.03 M", "8.2 MB", "0.42 ms", "1.15 ms", "2,380.0", "0.0 MB", "69.64%"],
-        ["Multilingual BERT (mBERT)", "177.85 M", "714.2 MB", "12.35 ms", "64.20 ms", "81.0", "1,420.5 MB", "72.57%"],
-        ["Pure XLM-RoBERTa (Without Fusion)", "278.04 M", "1,114.5 MB", "28.07 ms", "142.50 ms", "35.6", "2,180.2 MB", "72.34%"],
-        ["XLM-R + Preprocessing (Without Fusion)", "278.04 M", "1,114.6 MB", "28.85 ms", "144.10 ms", "34.7", "2,180.5 MB", "88.60%"],
-        ["Proposed: Knowledge-Enhanced Framework", "278.04 M", "1,114.8 MB", "29.92 ms", "148.30 ms", "33.4", "2,184.0 MB", "96.44%"]
+        ["Linear SVM", "0.03M", "8.2MB", "0.42ms", "1.15ms", "69.64%"],
+        ["mBERT", "177.8M", "714MB", "12.35ms", "64.20ms", "72.57%"],
+        ["Pure XLM-R", "278.0M", "1114MB", "28.07ms", "142.5ms", "72.34%"],
+        ["XLM-R + Preproc", "278.0M", "1115MB", "28.85ms", "144.1ms", "88.60%"],
+        ["Proposed Framework", "278.0M", "1115MB", "29.92ms", "148.3ms", "96.44%"]
     ]
-    story.append(make_table(["Model Architecture", "Params", "Disk Size", "GPU Lat", "CPU Lat", "Throughput", "VRAM Footprint", "F1 (%)"], t_eff, [1.7*inch, 0.7*inch, 0.7*inch, 0.7*inch, 0.7*inch, 0.8*inch, 0.8*inch, 0.6*inch]))
-    story.append(Paragraph("TABLE IV. COMPUTATIONAL EFFICIENCY AND INFERENCE LATENCY", caption_style))
+    story.append(make_table(["Model Architecture", "Params", "Disk", "GPU Lat", "CPU Lat", "F1 (%)"], t_eff, [58, 38, 38, 42, 42, 44]))
+    story.append(Paragraph("TABLE VI. COMPUTATIONAL EFFICIENCY AND INFERENCE LATENCY", caption_style))
 
-    story.append(Paragraph("E. Robustness Analysis Under Typographic Noise (Table V)", h2_style))
-    story.append(Paragraph("Table V evaluates model resilience across synthetic character drops, letter swaps, and phonetic corruptions.", body_style))
+    story.append(Paragraph("E. Robustness Analysis Under Typographic Noise (Table VII)", h2_style))
+    story.append(Paragraph("Table VII evaluates model resilience across synthetic character drops, letter swaps, and phonetic corruptions.", body_style))
     t_rob = [
-        ["0% Noise (Clean Baseline)", "76.64%", "76.64%", "72.34%", "+4.30%"],
-        ["10% Noise (Mild Typos)", "72.36%", "72.35%", "61.20%", "+11.15%"],
-        ["25% Noise (Severe Noise)", "75.78%", "75.78%", "52.40%", "+23.38%"]
+        ["0% Noise (Clean)", "76.64%", "76.64%", "72.34%", "+4.30%"],
+        ["10% Noise (Mild)", "72.36%", "72.35%", "61.20%", "+11.15%"],
+        ["25% Noise (Severe)", "75.78%", "75.78%", "52.40%", "+23.38%"]
     ]
-    story.append(make_table(["Perturbation Level", "Proposed Acc (%)", "Proposed F1 (%)", "Vanilla XLM-R F1 (%)", "Resilience Gain (Delta)"], t_rob, [1.9*inch, 1.2*inch, 1.2*inch, 1.2*inch, 1.2*inch]))
-    story.append(Paragraph("TABLE V. ROBUSTNESS ANALYSIS UNDER SOCIAL MEDIA NOISE", caption_style))
+    story.append(make_table(["Noise Level", "Prop. Acc", "Prop. F1", "Vanilla F1", "Gain (Delta)"], t_rob, [62, 50, 50, 50, 50]))
+    story.append(Paragraph("TABLE VII. ROBUSTNESS ANALYSIS UNDER SOCIAL MEDIA NOISE", caption_style))
 
     if os.path.exists("results/figure4_robustness_analysis.png"):
-        story.append(Image("results/figure4_robustness_analysis.png", width=5.5*inch, height=2.8*inch))
+        story.append(Image("results/figure4_robustness_analysis.png", width=255, height=135))
         story.append(Paragraph("Fig. 4. Robustness Degradation Curve: Proposed Knowledge-Enhanced Framework vs. Vanilla Transformer under Noise.", caption_style))
 
-    story.append(Paragraph("F. Impact of Code-Mixing Index (CMI) on Classification Accuracy (Table VI)", h2_style))
-    story.append(Paragraph("Table VI measures performance degradation across low, medium, and high code-mixing density regimes.", body_style))
+    story.append(Paragraph("F. Impact of Code-Mixing Index (CMI) on Accuracy (Table VIII)", h2_style))
+    story.append(Paragraph("Table VIII measures performance degradation across low, medium, and high code-mixing density regimes.", body_style))
     t_cmi = [
-        ["Low CMI (0 - 15%)", "184", "52.4%", "78.40%", "79.10%", "98.20%", "+19.80%"],
-        ["Medium CMI (15 - 30%)", "136", "38.7%", "68.20%", "72.40%", "96.50%", "+28.30%"],
-        ["High CMI (30 - 50%)", "31", "8.8%", "56.50%", "64.80%", "94.10%", "+37.60%"]
+        ["Low CMI (0 - 15%)", "184", "52.4%", "78.40%", "98.20%", "+19.80%"],
+        ["Med CMI (15 - 30%)", "136", "38.7%", "68.20%", "96.50%", "+28.30%"],
+        ["High CMI (30 - 50%)", "31", "8.8%", "56.50%", "94.10%", "+37.60%"]
     ]
-    story.append(make_table(["Code-Mixing Range (CMI)", "Count (N)", "Corpus %", "Linear SVM Acc", "Vanilla XLM-R Acc", "Proposed Acc", "Resilience Gain (Delta)"], t_cmi, [1.5*inch, 0.7*inch, 0.8*inch, 1.0*inch, 1.0*inch, 0.9*inch, 0.8*inch]))
-    story.append(Paragraph("TABLE VI. IMPACT OF CODE-MIXING DENSITY (CMI) ON ACCURACY", caption_style))
+    story.append(make_table(["CMI Range", "N", "Corp %", "SVM Acc", "Prop. Acc", "Gain (Delta)"], t_cmi, [58, 30, 36, 46, 46, 46]))
+    story.append(Paragraph("TABLE VIII. IMPACT OF CODE-MIXING DENSITY (CMI) ON ACCURACY", caption_style))
 
     if os.path.exists("results/figure5_cmi_analysis.png"):
-        story.append(Image("results/figure5_cmi_analysis.png", width=5.5*inch, height=2.6*inch))
+        story.append(Image("results/figure5_cmi_analysis.png", width=255, height=125))
         story.append(Paragraph("Fig. 5. Code-Mixing Index (CMI) vs. Model Accuracy Degradation across Linguistic Regimes.", caption_style))
 
-    story.append(Paragraph("G. Qualitative Linguistic Error Taxonomy and Failure Mode Diagnostics (Table VII)", h2_style))
-    story.append(Paragraph("Table VII presents a qualitative diagnosis of the failure mechanisms behind remaining model misclassifications.", body_style))
+    story.append(Paragraph("G. Qualitative Linguistic Error Taxonomy (Table IX)", h2_style))
+    story.append(Paragraph("Table IX presents a qualitative diagnosis of the failure mechanisms behind remaining model misclassifications.", body_style))
     t_err = [
-        ["Sarcasm & Pragmatic Irony", "41.7%", "Padam semma... thookam nalla varuthu", "Negative", "Positive", "Praise tokens mask pragmatic ridicule; vocal tone absent"],
-        ["Implicit / Latent Aspects", "25.0%", "Kanna kattudhu bro padam fulla", "Negative", "Missed", "Aspect not named; opinion expressed via physical metaphor"],
-        ["Ambiguous Pronoun Reference", "16.7%", "Avaru mass pannitaaru but idhu romba waste", "Negative", "Positive", "Demonstrative pronoun 'idhu' creates deictic ambiguity"],
-        ["Polysemous Slang Inversion", "10.0%", "BGM vera mari bayangaram bro", "Positive", "Negative", "'Bayangaram' literally denotes 'scary' but denotes praise"],
-        ["Rhetorical Questions", "6.6%", "Idhellam oru kadhaiya da?", "Negative", "Neutral", "Interrogative syntax conveying contempt without negative cue"]
+        ["Sarcasm / Irony", "Padam semma... thookam varuthu", "41.7%", "Praise tokens mask ridicule; tone absent"],
+        ["Implicit Aspects", "Kanna kattudhu bro padam", "25.0%", "Aspect unstated; expressed via metaphor"],
+        ["Pronoun Reference", "Avaru mass but idhu waste", "16.7%", "Demonstrative 'idhu' creates ambiguity"],
+        ["Polysemous Slang", "BGM bayangaram bro", "10.0%", "'Bayangaram' denotes praise here"],
+        ["Rhetorical Qs", "Idhellam oru kadhaiya?", "6.6%", "Interrogative syntax conveying contempt"]
     ]
-    story.append(make_table(["Error Category", "Proportion", "Representative Sample", "Ground Truth", "Prediction", "Root Cause Linguistic Failure"], t_err, [1.4*inch, 0.7*inch, 1.7*inch, 0.7*inch, 0.7*inch, 1.5*inch]))
-    story.append(Paragraph("TABLE VII. QUALITATIVE LINGUISTIC ERROR TAXONOMY", caption_style))
+    story.append(make_table(["Error Category", "Representative Sample", "Prop.", "Root Cause Linguistic Failure"], t_err, [58, 76, 32, 96]))
+    story.append(Paragraph("TABLE IX. QUALITATIVE LINGUISTIC ERROR TAXONOMY", caption_style))
 
     if os.path.exists("results/figure6_error_distribution.png"):
-        story.append(Image("results/figure6_error_distribution.png", width=4.0*inch, height=2.8*inch))
+        story.append(Image("results/figure6_error_distribution.png", width=210, height=150))
         story.append(Paragraph("Fig. 6. Qualitative Distribution of Failure Modes across Remaining Misclassifications (~3.5%).", caption_style))
 
     # Section VII & VIII
-    story.append(Paragraph("VII. PRACTICAL LIMITATIONS AND FUTURE RESEARCH DIRECTIONS", h1_style))
+    story.append(Paragraph("VII. LIMITATIONS AND FUTURE DIRECTIONS", h1_style))
     story.append(Paragraph("While our Knowledge-Enhanced Framework establishes state-of-the-art benchmark results for Tamil-English code-mixed ABSA, empirical analysis reveals three primary operational limitations:<br/>"
                            "1) <i>Pragmatic Sarcasm Detection</i>: Sarcasm accounts for 41.7% of remaining errors. Text-only models struggle when literal surface praise conceals negative intent without acoustic prosody or video facial expressions. Future work will investigate multimodal sentiment fusion incorporating audio pitch variations and video facial reactions.<br/>"
                            "2) <i>Implicit Aspect Resolution</i>: Opinions expressed through physical metaphors (e.g., 'kanna kattudhu') lack explicit lexical anchors. Integrating commonsense external knowledge graphs will be explored to infer unstated aspect targets.<br/>"
@@ -466,7 +511,7 @@ def generate_pdf():
         story.append(Paragraph(r, ref_style))
 
     doc.build(story)
-    print(f"Generated publication PDF: {pdf_path}")
+    print(f"Generated 2-column publication PDF: {pdf_path}")
 
 if __name__ == "__main__":
     generate_pdf()

@@ -74,12 +74,31 @@ def build_research_paper_docx():
                      r'</w:pBdr>')
     line_p._p.get_or_add_pPr().append(pBdr)
 
+    # Switch to 2-Column Layout for Abstract and Body Sections (IEEE Standard)
+    body_section = doc.add_section(docx.enum.section.WD_SECTION_START.CONTINUOUS)
+    body_section.top_margin = Inches(0.75)
+    body_section.bottom_margin = Inches(0.75)
+    body_section.left_margin = Inches(0.75)
+    body_section.right_margin = Inches(0.75)
+    
+    sectPr = body_section._sectPr
+    cols = sectPr.xpath('./w:cols')
+    if cols:
+        cols[0].set(qn('w:num'), '2')
+        cols[0].set(qn('w:space'), '360') # 0.25 inch gutter between columns
+    else:
+        cols_elm = OxmlElement('w:cols')
+        cols_elm.set(qn('w:num'), '2')
+        cols_elm.set(qn('w:space'), '360')
+        sectPr.append(cols_elm)
+
     # 3. ABSTRACT & KEYWORDS
     abs_p = doc.add_paragraph()
-    abs_p.paragraph_format.space_after = Pt(8)
+    abs_p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    abs_p.paragraph_format.space_after = Pt(6)
     abs_bold = abs_p.add_run("Abstract—")
     abs_bold.bold = True
-    abs_bold.font.size = Pt(9.5)
+    abs_bold.font.size = Pt(8.5)
     abs_text = abs_p.add_run(
         "The rapid escalation of multilingual digital discourse across social media platforms has led to widespread code-mixing, "
         "wherein users dynamically interleave vernacular languages and English within Romanized orthography. In Dravidian languages "
@@ -138,13 +157,14 @@ def build_research_paper_docx():
 
     def add_p(text, bold_prefix=None):
         p = doc.add_paragraph()
-        p.paragraph_format.space_after = Pt(6)
-        p.paragraph_format.line_spacing = 1.15
+        p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+        p.paragraph_format.space_after = Pt(4)
+        p.paragraph_format.line_spacing = 1.05
         if bold_prefix:
             bp = p.add_run(bold_prefix)
             bp.bold = True
         r = p.add_run(text)
-        r.font.size = Pt(10)
+        r.font.size = Pt(8.5)
         return p
 
     def add_styled_table(headers, rows, col_widths=None):
@@ -157,12 +177,12 @@ def build_research_paper_docx():
         for i, header_text in enumerate(headers):
             hdr_cells[i].text = header_text
             set_cell_background(hdr_cells[i], "003366") # Navy blue
-            set_cell_margins(hdr_cells[i], top=120, bottom=120, left=140, right=140)
+            set_cell_margins(hdr_cells[i], top=50, bottom=50, left=50, right=50)
             for p in hdr_cells[i].paragraphs:
                 p.alignment = WD_ALIGN_PARAGRAPH.CENTER
                 for run in p.runs:
                     run.font.bold = True
-                    run.font.size = Pt(9)
+                    run.font.size = Pt(7)
                     run.font.color.rgb = RGBColor(255, 255, 255)
                     run.font.name = 'Times New Roman'
                     
@@ -173,42 +193,46 @@ def build_research_paper_docx():
             for c_idx, cell_value in enumerate(row_data):
                 row_cells[c_idx].text = str(cell_value)
                 set_cell_background(row_cells[c_idx], bg_color)
-                set_cell_margins(row_cells[c_idx], top=80, bottom=80, left=140, right=140)
+                set_cell_margins(row_cells[c_idx], top=40, bottom=40, left=50, right=50)
                 for p in row_cells[c_idx].paragraphs:
                     if c_idx == 0:
                         p.alignment = WD_ALIGN_PARAGRAPH.LEFT
                     else:
                         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
                     for run in p.runs:
-                        run.font.size = Pt(9)
+                        run.font.size = Pt(7)
                         run.font.name = 'Times New Roman'
                         if "Proposed" in str(cell_value) or "Full Proposed" in str(cell_value) or "96.4" in str(cell_value):
                             run.font.bold = True
 
-        # Apply Column Widths
+        # Apply Column Widths (scaled to 3.35 inches column width)
         if col_widths:
+            total_w = sum(col_widths)
+            scale = 3.35 / total_w
+            norm_widths = [w * scale for w in col_widths]
             for row in table.rows:
-                for c_idx, width in enumerate(col_widths):
+                for c_idx, width in enumerate(norm_widths):
                     row.cells[c_idx].width = Inches(width)
 
-        doc.add_paragraph().paragraph_format.space_after = Pt(4)
+        doc.add_paragraph().paragraph_format.space_after = Pt(2)
         return table
 
-    def add_image_if_exists(img_path, caption, width_in=5.8):
+    def add_image_if_exists(img_path, caption, width_in=3.35):
         if os.path.exists(img_path):
             p = doc.add_paragraph()
             p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            p.paragraph_format.space_before = Pt(8)
+            p.paragraph_format.space_before = Pt(6)
             p.paragraph_format.space_after = Pt(2)
             run = p.add_run()
-            run.add_picture(img_path, width=Inches(width_in))
+            actual_w = min(width_in, 3.35)
+            run.add_picture(img_path, width=Inches(actual_w))
             
             cp = doc.add_paragraph()
             cp.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            cp.paragraph_format.space_after = Pt(10)
+            cp.paragraph_format.space_after = Pt(6)
             crun = cp.add_run(caption)
             crun.font.name = 'Times New Roman'
-            crun.font.size = Pt(9)
+            crun.font.size = Pt(8)
             crun.italic = True
             crun.bold = True
 
